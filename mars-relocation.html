@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARES — Mars Relocation Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --mars-red: #c0392b;
+    --mars-orange: #e05a1a;
+    --dust: #d4814a;
+    --rust: #7d2e0e;
+    --deep-space: #04060e;
+    --space-mid: #0c1220;
+    --star-white: #eee8d5;
+    --accent: #ff6b35;
+    --surface: rgba(255,107,53,0.07);
+    --border: rgba(255,107,53,0.18);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--deep-space);
+    color: var(--star-white);
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    position: fixed;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%,-50%);
+    transition: width .2s, height .2s, opacity .2s;
+    mix-blend-mode: screen;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,107,53,0.5);
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%,-50%);
+    transition: transform .12s ease, width .2s, height .2s;
+  }
+
+  /* Stars background */
+  .stars {
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 20% 50%, rgba(112,30,10,0.15) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(10,20,60,0.3) 0%, transparent 50%),
+      var(--deep-space);
+    z-index: 0;
+  }
+  .stars::before, .stars::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: 
+      radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1px 1px at 25% 35%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 40% 10%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 55% 45%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 25%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 85% 55%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 15% 70%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 85%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 60% 75%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 80%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 5% 50%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 95% 40%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 48% 60%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 72% 90%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 18% 92%, rgba(255,255,255,0.3) 0%, transparent 100%);
+  }
+  .stars::after {
+    background-image: 
+      radial-gradient(1px 1px at 3% 8%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 22% 18%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1px 1px at 38% 52%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 51% 28%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 65% 68%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 78% 12%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1px 1px at 92% 62%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 8% 38%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 44% 88%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 57% 3%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1px 1px at 33% 63%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 83% 33%, rgba(255,255,255,0.6) 0%, transparent 100%);
+  }
+
+  /* Nav */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 4rem;
+    backdrop-filter: blur(20px);
+    background: rgba(4,6,14,0.7);
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-shadow: 0 0 30px rgba(255,107,53,0.5);
+  }
+  .logo span { color: var(--star-white); }
+  .nav-links {
+    display: flex;
+    gap: 2.5rem;
+    list-style: none;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .nav-links a {
+    color: rgba(238,232,213,0.6);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  .nav-links a:hover { color: var(--accent); }
+  .nav-cta {
+    background: var(--accent);
+    color: var(--deep-space);
+    padding: 0.6rem 1.4rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    border: none;
+    cursor: none;
+    font-weight: 700;
+    transition: all 0.3s;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  }
+  .nav-cta:hover { background: var(--dust); transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255,107,53,0.3); }
+
+  /* Hero */
+  #hero {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 4rem;
+    padding-top: 6rem;
+    overflow: hidden;
+  }
+
+  .mars-planet {
+    position: absolute;
+    right: -10%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 65vmin;
+    height: 65vmin;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #e8814a 0%, #c0392b 30%, #7d2e0e 60%, #3a1008 100%);
+    box-shadow: 
+      inset -20px -20px 60px rgba(0,0,0,0.8),
+      inset 10px 10px 40px rgba(255,150,80,0.3),
+      0 0 80px rgba(192,57,43,0.3),
+      0 0 200px rgba(192,57,43,0.1);
+    animation: planetFloat 8s ease-in-out infinite;
+  }
+  .mars-planet::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: 
+      radial-gradient(ellipse 60% 20% at 40% 60%, rgba(160,60,20,0.6) 0%, transparent 100%),
+      radial-gradient(ellipse 40% 10% at 70% 40%, rgba(200,100,50,0.3) 0%, transparent 100%),
+      radial-gradient(ellipse 80% 15% at 30% 75%, rgba(120,40,15,0.5) 0%, transparent 100%);
+  }
+  .mars-planet::after {
+    content: '';
+    position: absolute;
+    inset: -20%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(192,57,43,0.08) 0%, transparent 70%);
+    animation: atmosphereGlow 4s ease-in-out infinite alternate;
+  }
+
+  @keyframes planetFloat {
+    0%, 100% { transform: translateY(-50%) translateX(0); }
+    50% { transform: translateY(-52%) translateX(-8px); }
+  }
+  @keyframes atmosphereGlow {
+    from { opacity: 0.5; }
+    to { opacity: 1; }
+  }
+
+  .hero-content { max-width: 55%; position: relative; z-index: 2; }
+  .hero-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .hero-tag::before {
+    content: '';
+    width: 40px; height: 1px;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(4rem, 8vw, 9rem);
+    line-height: 0.9;
+    letter-spacing: 2px;
+    margin-bottom: 1.5rem;
+    color: var(--star-white);
+  }
+  h1 .accent { color: var(--accent); display: block; }
+  h1 .outline {
+    -webkit-text-stroke: 1px rgba(238,232,213,0.3);
+    color: transparent;
+  }
+
+  .hero-sub {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: rgba(238,232,213,0.6);
+    max-width: 42ch;
+    margin-bottom: 3rem;
+    font-weight: 400;
+  }
+
+  .hero-buttons { display: flex; gap: 1rem; align-items: center; }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--mars-orange), var(--accent));
+    color: var(--deep-space);
+    padding: 1rem 2rem;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: none;
+    cursor: none;
+    transition: all 0.3s;
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+    box-shadow: 0 0 40px rgba(255,107,53,0.25);
+  }
+  .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 50px rgba(255,107,53,0.4); }
+  .btn-ghost {
+    padding: 1rem 2rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--star-white);
+    background: transparent;
+    border: 1px solid var(--border);
+    cursor: none;
+    transition: all 0.3s;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); background: var(--surface); }
+
+  /* Stats bar */
+  .stats-bar {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin: 0;
+    background: rgba(255,107,53,0.03);
+  }
+  .stat-item {
+    padding: 2rem 3rem;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .stat-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(238,232,213,0.5);
+  }
+
+  /* Sections */
+  section {
+    position: relative;
+    z-index: 1;
+    padding: 8rem 4rem;
+  }
+
+  .section-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .section-tag::before {
+    content: '';
+    width: 30px; height: 1px;
+    background: var(--accent);
+  }
+
+  h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.5rem, 5vw, 5rem);
+    line-height: 0.95;
+    letter-spacing: 1px;
+    margin-bottom: 2rem;
+  }
+
+  /* Packages */
+  #packages { background: rgba(255,107,53,0.02); }
+  .packages-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 4rem;
+  }
+  .package-card {
+    border: 1px solid var(--border);
+    padding: 2.5rem;
+    background: rgba(255,107,53,0.04);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s;
+    cursor: none;
+  }
+  .package-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    transform: scaleX(0);
+    transition: transform 0.4s;
+  }
+  .package-card:hover::before { transform: scaleX(1); }
+  .package-card:hover {
+    border-color: rgba(255,107,53,0.4);
+    background: rgba(255,107,53,0.08);
+    transform: translateY(-5px);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 60px rgba(255,107,53,0.1);
+  }
+  .package-card.featured {
+    border-color: var(--accent);
+    background: rgba(255,107,53,0.1);
+  }
+  .package-badge {
+    position: absolute;
+    top: 1.5rem; right: 1.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 1px;
+    color: var(--deep-space);
+    background: var(--accent);
+    padding: 0.3rem 0.7rem;
+    text-transform: uppercase;
+  }
+  .package-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    display: block;
+  }
+  .package-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 2px;
+    margin-bottom: 0.5rem;
+    color: var(--star-white);
+  }
+  .package-price {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.8rem;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+  }
+  .package-price small {
+    font-size: 0.7rem;
+    color: rgba(238,232,213,0.5);
+    font-weight: 400;
+  }
+  .package-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-bottom: 2rem;
+    font-size: 0.85rem;
+    color: rgba(238,232,213,0.7);
+    line-height: 1.5;
+  }
+  .package-features li::before {
+    content: '→ ';
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+  }
+  .btn-package {
+    width: 100%;
+    padding: 0.9rem;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: none;
+    transition: all 0.3s;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    background: transparent;
+  }
+  .btn-package:hover, .featured .btn-package {
+    background: var(--accent);
+    color: var(--deep-space);
+  }
+
+  /* Process */
+  #process .section-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6rem;
+    align-items: center;
+  }
+  .process-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 3rem;
+  }
+  .step {
+    display: flex;
+    gap: 2rem;
+    padding: 2rem 0;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    cursor: none;
+    transition: all 0.3s;
+  }
+  .step:hover .step-content { color: var(--star-white); }
+  .step:hover .step-num { color: var(--accent); text-shadow: 0 0 20px rgba(255,107,53,0.8); }
+  .step-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.5rem;
+    color: rgba(255,107,53,0.2);
+    line-height: 1;
+    transition: all 0.3s;
+    min-width: 60px;
+  }
+  .step-content h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .step-content p {
+    font-size: 0.85rem;
+    color: rgba(238,232,213,0.5);
+    line-height: 1.7;
+  }
+
+  .visual-panel {
+    position: relative;
+    height: 500px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    background: rgba(255,107,53,0.03);
+  }
+  .visual-mars-mini {
+    position: absolute;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #e8814a 0%, #c0392b 35%, #7d2e0e 65%, #3a1008 100%);
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    box-shadow: 
+      inset -15px -15px 40px rgba(0,0,0,0.8),
+      inset 8px 8px 30px rgba(255,150,80,0.3),
+      0 0 80px rgba(192,57,43,0.4);
+    animation: spin 30s linear infinite;
+  }
+  @keyframes spin {
+    from { filter: hue-rotate(0deg); }
+    to { filter: hue-rotate(0deg); }
+  }
+  .orbit {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px dashed rgba(255,107,53,0.2);
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    animation: orbitRotate 6s linear infinite;
+  }
+  .orbit-1 { width: 340px; height: 340px; }
+  .orbit-2 { width: 420px; height: 420px; animation-duration: 10s; animation-direction: reverse; }
+  .orbit-dot {
+    position: absolute;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+    top: -4px; left: 50%;
+    transform: translateX(-50%);
+  }
+  @keyframes orbitRotate { from { transform: translate(-50%,-50%) rotate(0deg); } to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+  /* Testimonials */
+  #testimonials { background: rgba(255,107,53,0.02); }
+  .testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 4rem;
+  }
+  .testimonial-card {
+    border: 1px solid var(--border);
+    padding: 2rem;
+    background: rgba(255,107,53,0.03);
+    position: relative;
+    transition: all 0.4s;
+  }
+  .testimonial-card:hover {
+    border-color: rgba(255,107,53,0.3);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+  }
+  .testimonial-quote {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 4rem;
+    color: var(--accent);
+    opacity: 0.3;
+    line-height: 0.5;
+    margin-bottom: 1rem;
+  }
+  .testimonial-text {
+    font-size: 0.9rem;
+    line-height: 1.8;
+    color: rgba(238,232,213,0.7);
+    margin-bottom: 1.5rem;
+    font-style: italic;
+  }
+  .testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+  }
+  .author-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    background: rgba(255,107,53,0.15);
+    border: 1px solid var(--border);
+  }
+  .author-info strong {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  .author-info span {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  /* Application Form */
+  #apply {
+    background: rgba(255,107,53,0.03);
+    border-top: 1px solid var(--border);
+  }
+  .apply-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6rem;
+    align-items: start;
+  }
+  .apply-info h2 { margin-bottom: 1.5rem; }
+  .apply-info p {
+    color: rgba(238,232,213,0.6);
+    line-height: 1.8;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+  }
+  .info-points {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .info-point {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    background: rgba(255,107,53,0.03);
+  }
+  .info-point-icon {
+    font-size: 1.2rem;
+    color: var(--accent);
+    min-width: 30px;
+  }
+  .info-point-text {
+    font-size: 0.82rem;
+    color: rgba(238,232,213,0.65);
+    line-height: 1.6;
+  }
+  .info-point-text strong { color: var(--star-white); display: block; margin-bottom: 0.3rem; font-size: 0.85rem; }
+
+  /* Form */
+  .application-form {
+    background: rgba(255,107,53,0.04);
+    border: 1px solid var(--border);
+    padding: 3rem;
+    position: sticky;
+    top: 100px;
+  }
+  .form-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 2px;
+    margin-bottom: 2rem;
+    color: var(--accent);
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.2rem;
+  }
+  .form-group label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(238,232,213,0.6);
+  }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    background: rgba(4,6,14,0.8);
+    border: 1px solid var(--border);
+    color: var(--star-white);
+    padding: 0.85rem 1rem;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.3s;
+    cursor: none;
+    width: 100%;
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus { border-color: var(--accent); box-shadow: 0 0 20px rgba(255,107,53,0.1); }
+  .form-group select { appearance: none; }
+  .form-group textarea { resize: vertical; min-height: 100px; }
+
+  /* Progress bar */
+  .form-progress {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+  .progress-step {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+  .progress-step.active { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+  .btn-submit {
+    width: 100%;
+    padding: 1.1rem;
+    background: linear-gradient(135deg, var(--mars-orange), var(--accent));
+    border: none;
+    color: var(--deep-space);
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: none;
+    transition: all 0.3s;
+    margin-top: 1rem;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  }
+  .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 15px 40px rgba(255,107,53,0.4); }
+
+  /* Success message */
+  .success-msg {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  .success-msg.show { display: flex; }
+  .success-icon { font-size: 3rem; }
+  .success-msg h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+  .success-msg p { font-size: 0.85rem; color: rgba(238,232,213,0.6); line-height: 1.7; }
+
+  /* Footer */
+  footer {
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid var(--border);
+    padding: 3rem 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .footer-left { display: flex; flex-direction: column; gap: 0.5rem; }
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 4px;
+    color: var(--accent);
+    opacity: 0.8;
+  }
+  .footer-sub {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: rgba(238,232,213,0.35);
+    text-transform: uppercase;
+  }
+  .footer-right {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    color: rgba(238,232,213,0.3);
+  }
+
+  /* Countdown */
+  .launch-countdown {
+    display: flex;
+    gap: 2rem;
+    margin-top: 3rem;
+  }
+  .countdown-unit {
+    text-align: center;
+    min-width: 70px;
+  }
+  .countdown-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    color: var(--accent);
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(255,107,53,0.5);
+  }
+  .countdown-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(238,232,213,0.4);
+  }
+
+  /* Notification Toast */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: rgba(255,107,53,0.15);
+    border: 1px solid var(--accent);
+    padding: 1rem 1.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    gap: 1rem;
+    color: var(--star-white);
+    max-width: 300px;
+    animation: slideIn 0.3s ease;
+    backdrop-filter: blur(20px);
+  }
+  .toast.show { display: flex; }
+  .toast-icon { font-size: 1.2rem; }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* Scroll animations */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+  /* Mobile */
+  @media (max-width: 900px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-links { display: none; }
+    section { padding: 4rem 1.5rem; }
+    #hero { padding: 6rem 1.5rem 3rem; }
+    .hero-content { max-width: 100%; }
+    h1 { font-size: 4rem; }
+    .mars-planet { right: -20%; width: 50vw; height: 50vw; opacity: 0.5; }
+    .stats-bar { grid-template-columns: repeat(2,1fr); }
+    .packages-grid { grid-template-columns: 1fr; }
+    #process .section-inner { grid-template-columns: 1fr; gap: 3rem; }
+    .testimonials-grid { grid-template-columns: 1fr; }
+    .apply-inner { grid-template-columns: 1fr; gap: 3rem; }
+    .application-form { position: static; }
+    .form-row { grid-template-columns: 1fr; }
+    footer { flex-direction: column; gap: 1rem; text-align: center; }
+    .launch-countdown { gap: 1rem; }
+  }
+
+  /* Scan line effect */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(0,0,0,0.03) 3px, rgba(0,0,0,0.03) 4px);
+    pointer-events: none;
+    z-index: 9997;
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="stars"></div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast">
+  <span class="toast-icon">🚀</span>
+  <span id="toastText">New colonist registered in Olympus Colony</span>
+</div>
+
+<!-- Navigation -->
+<nav>
+  <div class="logo">ARES <span>TRANSIT</span></div>
+  <ul class="nav-links">
+    <li><a href="#packages">Packages</a></li>
+    <li><a href="#process">Journey</a></li>
+    <li><a href="#testimonials">Colonists</a></li>
+    <li><a href="#apply">Apply</a></li>
+  </ul>
+  <button class="nav-cta" onclick="scrollToApply()">RESERVE SEAT</button>
+</nav>
+
+<!-- Hero -->
+<section id="hero">
+  <div class="hero-content fade-up">
+    <div class="hero-tag">Mission 2031 — Crew Applications Open</div>
+    <h1>
+      <span class="outline">YOUR NEW</span>
+      <span class="accent">HOME IS</span>
+      RED
+    </h1>
+    <p class="hero-sub">The first commercial Mars relocation program. Secure your berth on humanity's greatest migration. 140 million miles from ordinary.</p>
+    <div class="hero-buttons">
+      <button class="btn-primary" onclick="scrollToApply()">Begin Application</button>
+      <button class="btn-ghost" onclick="document.getElementById('process').scrollIntoView({behavior:'smooth'})">View Journey ↗</button>
+    </div>
+    <div class="launch-countdown">
+      <div class="countdown-unit">
+        <div class="countdown-num" id="days">000</div>
+        <div class="countdown-label">Days</div>
+      </div>
+      <div class="countdown-unit">
+        <div class="countdown-num" id="hours">00</div>
+        <div class="countdown-label">Hours</div>
+      </div>
+      <div class="countdown-unit">
+        <div class="countdown-num" id="mins">00</div>
+        <div class="countdown-label">Minutes</div>
+      </div>
+      <div class="countdown-unit">
+        <div class="countdown-num" id="secs">00</div>
+        <div class="countdown-label">Seconds</div>
+      </div>
+    </div>
+  </div>
+  <div class="mars-planet"></div>
+</section>
+
+<!-- Stats -->
+<div class="stats-bar">
+  <div class="stat-item fade-up">
+    <div class="stat-num">14,782</div>
+    <div class="stat-label">Applications Received</div>
+  </div>
+  <div class="stat-item fade-up" style="transition-delay:0.1s">
+    <div class="stat-num">320</div>
+    <div class="stat-label">Available Berths — 2031</div>
+  </div>
+  <div class="stat-item fade-up" style="transition-delay:0.2s">
+    <div class="stat-num">7 Mo</div>
+    <div class="stat-label">Journey Duration</div>
+  </div>
+  <div class="stat-item fade-up" style="transition-delay:0.3s">
+    <div class="stat-num">∞</div>
+    <div class="stat-label">Reasons to Go</div>
+  </div>
+</div>
+
+<!-- Packages -->
+<section id="packages">
+  <div class="section-tag">Relocation Tiers</div>
+  <h2>CHOOSE YOUR<br>MISSION CLASS</h2>
+
+  <div class="packages-grid">
+    <div class="package-card fade-up">
+      <span class="package-icon">🌑</span>
+      <div class="package-name">Pioneer</div>
+      <div class="package-price">$280K <small>/ person</small></div>
+      <ul class="package-features">
+        <li>Shared habitat module (8 persons)</li>
+        <li>500kg personal cargo allowance</li>
+        <li>Basic life support & O2 systems</li>
+        <li>12-month Mars orientation program</li>
+        <li>Community greenhouse access</li>
+        <li>Emergency evac priority — Tier 3</li>
+      </ul>
+      <button class="btn-package" onclick="selectPackage('Pioneer')">Select Pioneer</button>
+    </div>
+
+    <div class="package-card featured fade-up" style="transition-delay:0.15s">
+      <div class="package-badge">Most Popular</div>
+      <span class="package-icon">🔴</span>
+      <div class="package-name">Colonist</div>
+      <div class="package-price">$650K <small>/ person</small></div>
+      <ul class="package-features">
+        <li>Private habitat module with partner</li>
+        <li>2,000kg personal cargo allowance</li>
+        <li>Premium climate-controlled suite</li>
+        <li>Full medical bay & biotech access</li>
+        <li>Land allocation — 2 hectares</li>
+        <li>Emergency evac priority — Tier 1</li>
+        <li>5-year Mars support guarantee</li>
+      </ul>
+      <button class="btn-package" onclick="selectPackage('Colonist')">Select Colonist</button>
+    </div>
+
+    <div class="package-card fade-up" style="transition-delay:0.3s">
+      <span class="package-icon">🌟</span>
+      <div class="package-name">Founder</div>
+      <div class="package-price">$2.4M <small>/ person</small></div>
+      <ul class="package-features">
+        <li>Exclusive Founders Dome — Level 5</li>
+        <li>Unlimited cargo + vehicle shipment</li>
+        <li>Private lab / commercial suite</li>
+        <li>Governance council seat</li>
+        <li>Land allocation — 50 hectares</li>
+        <li>Emergency evac priority — Tier 0</li>
+        <li>Lifetime mission support contract</li>
+        <li>Colony naming rights (1 district)</li>
+      </ul>
+      <button class="btn-package" onclick="selectPackage('Founder')">Select Founder</button>
+    </div>
+  </div>
+</section>
+
+<!-- Process -->
+<section id="process">
+  <div class="section-inner">
+    <div>
+      <div class="section-tag">How it works</div>
+      <h2>YOUR JOURNEY<br>TO THE RED<br>PLANET</h2>
+      <div class="process-steps">
+        <div class="step fade-up">
+          <div class="step-num">01</div>
+          <div class="step-content">
+            <h3>Apply & Qualify</h3>
+            <p>Submit your application, undergo cognitive & physical assessment. Our AI screening identifies mission-critical traits.</p>
+          </div>
+        </div>
+        <div class="step fade-up" style="transition-delay:0.1s">
+          <div class="step-num">02</div>
+          <div class="step-content">
+            <h3>18-Month Training</h3>
+            <p>Survive & thrive preparation at our New Mexico facility. Habitat systems, geology, medical, and psychological resilience.</p>
+          </div>
+        </div>
+        <div class="step fade-up" style="transition-delay:0.2s">
+          <div class="step-num">03</div>
+          <div class="step-content">
+            <h3>Launch Window</h3>
+            <p>Board ARES-7 at Kennedy Space Center during optimal Mars transfer window. 7-month transit with full crew support.</p>
+          </div>
+        </div>
+        <div class="step fade-up" style="transition-delay:0.3s">
+          <div class="step-num">04</div>
+          <div class="step-content">
+            <h3>Mars Arrival</h3>
+            <p>Land at Chryse Base, your new home. Begin habitat construction and integration into the growing Mars community.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="visual-panel fade-up" style="transition-delay:0.2s">
+      <div class="orbit orbit-1"><div class="orbit-dot"></div></div>
+      <div class="orbit orbit-2"><div class="orbit-dot"></div></div>
+      <div class="visual-mars-mini"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials -->
+<section id="testimonials">
+  <div class="section-tag">Colonist Stories</div>
+  <h2>VOICES FROM<br>THE FRONTIER</h2>
+
+  <div class="testimonials-grid">
+    <div class="testimonial-card fade-up">
+      <div class="testimonial-quote">"</div>
+      <p class="testimonial-text">The first Martian sunrise I witnessed made every challenge worth it. The sky turns a dusty pink — nothing like anything on Earth. ARES prepared us for everything.</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">👩‍🚀</div>
+        <div class="author-info">
+          <strong>Dr. Elena Voss</strong>
+          <span>Chryse Colony, Sol 412</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="testimonial-card fade-up" style="transition-delay:0.15s">
+      <div class="testimonial-quote">"</div>
+      <p class="testimonial-text">Left my biotech startup on Earth, built a bigger one on Mars. The resource landscape here is unlike anything imaginable. I'm a Martian now — no going back.</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">👨‍💼</div>
+        <div class="author-info">
+          <strong>Marcus Chen</strong>
+          <span>Olympus District, Founder</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="testimonial-card fade-up" style="transition-delay:0.3s">
+      <div class="testimonial-quote">"</div>
+      <p class="testimonial-text">Our family of four arrived on Mission 3. My kids are the first generation of true Martians. They dream bigger than Earth could ever contain. Best decision we ever made.</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">👨‍👩‍👧‍�</div>
+        <div class="author-info">
+          <strong>The Nakamura Family</strong>
+          <span>Hellas Settlement, Sol 731</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Apply -->
+<section id="apply">
+  <div class="apply-inner">
+    <div class="apply-info">
+      <div class="section-tag">Apply Now</div>
+      <h2>BEGIN YOUR<br>APPLICATION</h2>
+      <p>Mission 2031 accepts 320 colonists. With 14,000+ applicants, competition is fierce. Start your application today — qualified candidates are reviewed on a rolling basis.</p>
+
+      <div class="info-points">
+        <div class="info-point fade-up">
+          <div class="info-point-icon">🧬</div>
+          <div class="info-point-text">
+            <strong>Health Requirements</strong>
+            Applicants must pass baseline physical and psychological assessments. Pre-existing conditions reviewed case-by-case.
+          </div>
+        </div>
+        <div class="info-point fade-up" style="transition-delay:0.1s">
+          <div class="info-point-icon">💰</div>
+          <div class="info-point-text">
+            <strong>Financing Available</strong>
+            ARES partners with 14 international banks. Colonist tier financing at 2.1% APR over 30 years, post-arrival income-based.
+          </div>
+        </div>
+        <div class="info-point fade-up" style="transition-delay:0.2s">
+          <div class="info-point-icon">🌍</div>
+          <div class="info-point-text">
+            <strong>All Nationalities Welcome</strong>
+            Mars has no borders. Applicants from all 193 UN member states are eligible. Citizenship transfers automatically.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="application-form fade-up" id="appForm">
+      <div class="form-title">Mission Application</div>
+      
+      <div class="form-progress">
+        <div class="progress-step active" id="p1"></div>
+        <div class="progress-step" id="p2"></div>
+        <div class="progress-step" id="p3"></div>
+      </div>
+
+      <form id="marsForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" id="firstName" placeholder="e.g. Elena" required>
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" id="lastName" placeholder="e.g. Voss" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="email" placeholder="you@earth.com" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Age</label>
+            <input type="number" id="age" placeholder="e.g. 32" min="18" max="65" required>
+          </div>
+          <div class="form-group">
+            <label>Nationality</label>
+            <input type="text" id="nationality" placeholder="e.g. German" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Mission Package</label>
+          <select id="package" required>
+            <option value="">Select tier...</option>
+            <option value="Pioneer">Pioneer — $280,000</option>
+            <option value="Colonist">Colonist — $650,000</option>
+            <option value="Founder">Founder — $2,400,000</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Primary Skill / Profession</label>
+          <select id="profession" required>
+            <option value="">Select profession...</option>
+            <option>Engineer — Structural / Mechanical</option>
+            <option>Engineer — Electrical / Systems</option>
+            <option>Medical Doctor / Surgeon</option>
+            <option>Scientist — Biology / Geology</option>
+            <option>Agricultural Specialist</option>
+            <option>Psychologist / Mental Health</option>
+            <option>Entrepreneur / Business</option>
+            <option>Educator / Teacher</option>
+            <option>Artist / Creative Professional</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Why Mars? (250 words max)</label>
+          <textarea id="motivation" placeholder="Tell us why you want to relocate to Mars and what you'll contribute to the colony..." maxlength="1500"></textarea>
+        </div>
+        <button type="submit" class="btn-submit">Submit Application →</button>
+      </form>
+
+      <div class="success-msg" id="successMsg">
+        <div class="success-icon">🚀</div>
+        <h3>Application Received</h3>
+        <p>Welcome, future Martian. Your application ID is <strong id="appId" style="color:var(--accent)"></strong>. Our team will contact you within 14 Earth days. Begin preparing — Mars awaits.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-left">
+    <div class="footer-logo">ARES TRANSIT</div>
+    <div class="footer-sub">Humanity's First Commercial Mars Relocation Program</div>
+  </div>
+  <div class="footer-right">© 2031 ARES TRANSIT CORP. · ALL SYSTEMS NOMINAL</div>
+</footer>
+
+<script>
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  const cursorRing = document.getElementById('cursorRing');
+  let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+
+  document.addEventListener('mousemove', e => {
+    mouseX = e.clientX; mouseY = e.clientY;
+    cursor.style.left = mouseX + 'px';
+    cursor.style.top = mouseY + 'px';
+  });
+
+  function animateCursor() {
+    ringX += (mouseX - ringX) * 0.1;
+    ringY += (mouseY - ringY) * 0.1;
+    cursorRing.style.left = ringX + 'px';
+    cursorRing.style.top = ringY + 'px';
+    requestAnimationFrame(animateCursor);
+  }
+  animateCursor();
+
+  // Countdown to Jan 1 2031
+  function updateCountdown() {
+    const target = new Date('2031-01-01T00:00:00');
+    const now = new Date();
+    const diff = target - now;
+    if (diff <= 0) return;
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+    document.getElementById('days').textContent = String(days).padStart(3,'0');
+    document.getElementById('hours').textContent = String(hours).padStart(2,'0');
+    document.getElementById('mins').textContent = String(mins).padStart(2,'0');
+    document.getElementById('secs').textContent = String(secs).padStart(2,'0');
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  // Scroll animations
+  const fadeEls = document.querySelectorAll('.fade-up');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  fadeEls.forEach(el => observer.observe(el));
+
+  // Select package from cards
+  function selectPackage(pkg) {
+    document.getElementById('package').value = pkg;
+    scrollToApply();
+    showToast('Package selected: ' + pkg);
+  }
+
+  function scrollToApply() {
+    document.getElementById('apply').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // Form progress
+  const formInputs = document.querySelectorAll('#marsForm input, #marsForm select, #marsForm textarea');
+  formInputs.forEach(input => {
+    input.addEventListener('change', updateProgress);
+    input.addEventListener('input', updateProgress);
+  });
+
+  function updateProgress() {
+    const all = document.querySelectorAll('#marsForm input[required], #marsForm select[required]');
+    const filled = Array.from(all).filter(i => i.value.trim()).length;
+    const ratio = filled / all.length;
+    document.getElementById('p1').classList.toggle('active', ratio >= 0);
+    document.getElementById('p2').classList.toggle('active', ratio >= 0.4);
+    document.getElementById('p3').classList.toggle('active', ratio >= 0.8);
+  }
+
+  // Form submit
+  document.getElementById('marsForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = 'ARES-' + Math.floor(Math.random() * 900000 + 100000);
+    document.getElementById('appId').textContent = id;
+    this.style.display = 'none';
+    document.getElementById('successMsg').classList.add('show');
+    showToast('🎉 Application ' + id + ' submitted!');
+  });
+
+  // Toast notifications
+  const toastMessages = [
+    'New colonist registered in Olympus Colony',
+    'Application approved — Dr. Santos, Mission 2031',
+    'Pioneer package sold out — 4 Colonist slots remain',
+    'Elena V. from Munich just applied',
+    'Mission training facility now accepting visitors',
+    '3 new applications in the last 10 minutes'
+  ];
+  let toastIdx = 0;
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toastText').textContent = msg || toastMessages[toastIdx % toastMessages.length];
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 4000);
+    toastIdx++;
+  }
+
+  // Random toast every 15s
+  setInterval(() => showToast(), 15000);
+  setTimeout(() => showToast(), 3000);
+</script>
+
+</body>
+</html>
